@@ -1,19 +1,26 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Swal from "sweetalert2";
+import emailjs from "@emailjs/browser";
 
 const Form = () => {
+  const form = useRef();
+
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
   const [number, setNumber] = useState("");
   const [dob, setDob] = useState("");
   const [submitted, setSubmitted] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // REGEX PATTERNS
   const nameRegex = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
   const ageRegex = /^\d+$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const numberRegex = /^[6-9]\d{9}$/;
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,6 +52,15 @@ const Form = () => {
       return;
     }
 
+    // PASSWORD VALIDATION
+    if (!password.trim()) {
+      setSubmitted("password");
+      return;
+    } else if (!passwordRegex.test(password)) {
+      setSubmitted("password-format");
+      return;
+    }
+
     // MOBILE NUMBER VALIDATION
     if (!number.trim()) {
       setSubmitted("number");
@@ -54,7 +70,7 @@ const Form = () => {
       return;
     }
 
-    /// DOB VALIDATION
+    // DOB VALIDATION
     if (!dob) {
       setSubmitted("dob");
       return;
@@ -67,26 +83,47 @@ const Form = () => {
       }
     }
 
-    // SUCCESS
+    // EMAILJS
     setSubmitted("");
 
-    Swal.fire({
-      position: "center",
-      icon: "success",
-      title: "Your Form Has Been Submitted!",
-      showConfirmButton: true,
-      timer: 1500,
-    });
+    emailjs
+      .sendForm("service_o70kh7q", "template_9890534", form.current, {
+        publicKey: "p6hkOR5adBml4KhwX",
+      })
+      .then(
+        () => {
+          Swal.fire({
+            position: "center",
+            icon: "success",
+            title: "Your Form Has Been Submitted!",
+            showConfirmButton: true,
+            timer: 1500,
+          });
 
-    setName("");
-    setAge("");
-    setEmail("");
-    setNumber("");
-    setDob("");
+          setName("");
+          setAge("");
+          setEmail("");
+          setNumber("");
+          setDob("");
+          setPassword("");
+          setShowPassword(false);
+        },
+        (error) => {
+          console.log("FAILED...", error.text);
+
+          Swal.fire({
+            position: "center",
+            icon: "error",
+            title: "Submission Failed!",
+            text: "Please try again.",
+          });
+        },
+      );
   };
 
   return (
     <form
+      ref={form}
       onSubmit={handleSubmit}
       noValidate
       className="bg-main max-w-100 w-full h-auto p-5 rounded-3xl flex flex-col gap-5"
@@ -102,6 +139,7 @@ const Form = () => {
 
         <input
           id="name"
+          name="name"
           value={name}
           onChange={(e) => {
             setName(e.target.value);
@@ -133,6 +171,7 @@ const Form = () => {
 
         <input
           id="age"
+          name="age"
           value={age}
           onChange={(e) => {
             setAge(e.target.value);
@@ -166,6 +205,7 @@ const Form = () => {
 
         <input
           id="email"
+          name="email"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
@@ -186,6 +226,48 @@ const Form = () => {
         )}
       </div>
 
+      {/* PASSWORD */}
+      <div className="flex flex-col gap-2">
+        <label
+          className="text-black leading-normal text-lg font-semibold"
+          htmlFor="password"
+        >
+          Password
+        </label>
+
+        <div className="relative flex items-center">
+          <input
+            id="password"
+            name="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (submitted.startsWith("password")) setSubmitted("");
+            }}
+            placeholder="Please Enter Your Password"
+            className="text-lg w-full placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2 pr-20"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 text-sm font-semibold text-black cursor-pointer active:scale-95 transition-all duration-200"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        {submitted.startsWith("password") && (
+          <p className="text-lg font-semibold text-required">
+            {submitted === "password"
+              ? "Password is required"
+              : "Password must contain 8 characters, uppercase, lowercase, a number, and a special character"}
+          </p>
+        )}
+      </div>
+
       {/* MOBILE NUMBER */}
       <div className="flex flex-col gap-2">
         <label
@@ -197,6 +279,7 @@ const Form = () => {
 
         <input
           id="number"
+          name="number"
           value={number}
           onChange={(e) => {
             setNumber(e.target.value);
@@ -230,6 +313,7 @@ const Form = () => {
 
         <input
           id="dob"
+          name="dob"
           value={dob}
           onChange={(e) => {
             setDob(e.target.value);
