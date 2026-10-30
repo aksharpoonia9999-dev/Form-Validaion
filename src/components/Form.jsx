@@ -10,9 +10,9 @@ const Form = () => {
   const [email, setEmail] = useState("");
   const [number, setNumber] = useState("");
   const [dob, setDob] = useState("");
-  const [submitted, setSubmitted] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // REGEX PATTERNS
   const nameRegex = /^[A-Za-z]+(?:[ '-][A-Za-z]+)*$/;
@@ -22,70 +22,78 @@ const Form = () => {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
+  // Clears the error of only one field
+  const clearError = (field) => {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const updated = { ...prev };
+      delete updated[field];
+      return updated;
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const newErrors = {};
+
     // NAME VALIDATION
     if (!name.trim()) {
-      setSubmitted("name");
-      return;
+      newErrors.name = "Name is required";
     } else if (!nameRegex.test(name.trim())) {
-      setSubmitted("name-format");
-      return;
+      newErrors.name = "Use letters, spaces, apostrophes, or hyphens only";
     }
 
     // AGE VALIDATION
     if (!age.trim()) {
-      setSubmitted("age");
-      return;
-    } else if (!ageRegex.test(age) || Number(age) < 10 || Number(age) > 60) {
-      setSubmitted("age-format");
-      return;
+      newErrors.age = "Age is required";
+    } else if (
+      !ageRegex.test(age.trim()) ||
+      Number(age) < 10 ||
+      Number(age) > 60
+    ) {
+      newErrors.age = "Age must be a whole number between 10 and 60";
     }
 
     // EMAIL VALIDATION
     if (!email.trim()) {
-      setSubmitted("email");
-      return;
+      newErrors.email = "Email is required";
     } else if (!emailRegex.test(email.trim())) {
-      setSubmitted("email-format");
-      return;
+      newErrors.email = "Please enter a valid email address";
     }
 
     // PASSWORD VALIDATION
     if (!password.trim()) {
-      setSubmitted("password");
-      return;
+      newErrors.password = "Password is required";
     } else if (!passwordRegex.test(password)) {
-      setSubmitted("password-format");
-      return;
+      newErrors.password =
+        "Password must contain 8 characters, uppercase, lowercase, a number, and a special character";
     }
 
     // MOBILE NUMBER VALIDATION
     if (!number.trim()) {
-      setSubmitted("number");
-      return;
+      newErrors.number = "Mobile number is required";
     } else if (!numberRegex.test(number.trim())) {
-      setSubmitted("number-format");
-      return;
+      newErrors.number =
+        "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9";
     }
 
     // DOB VALIDATION
     if (!dob) {
-      setSubmitted("dob");
-      return;
+      newErrors.dob = "Date of birth is required";
     } else {
       const today = new Date().toLocaleDateString("en-CA");
-
       if (dob > today) {
-        setSubmitted("dob-format");
-        return;
+        newErrors.dob = "Please select a valid date that is not in the future";
       }
     }
 
-    // EMAILJS
-    setSubmitted("");
+    // SHOW ALL ERRORS AT ONCE
+    setErrors(newErrors);
 
+    if (Object.keys(newErrors).length > 0) return;
+
+    // EMAILJS
     emailjs
       .sendForm("service_o70kh7q", "template_9890534", form.current, {
         publicKey: "p6hkOR5adBml4KhwX",
@@ -107,6 +115,7 @@ const Form = () => {
           setDob("");
           setPassword("");
           setShowPassword(false);
+          setErrors({});
         },
         (error) => {
           console.log("FAILED...", error.text);
@@ -143,7 +152,7 @@ const Form = () => {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-            if (submitted.startsWith("name")) setSubmitted("");
+            clearError("name");
           }}
           placeholder="Please Enter Your Name"
           className="text-lg placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2"
@@ -151,12 +160,8 @@ const Form = () => {
           autoComplete="name"
         />
 
-        {submitted.startsWith("name") && (
-          <p className="text-lg font-semibold text-required">
-            {submitted === "name"
-              ? "Name is required"
-              : "Use letters, spaces, apostrophes, or hyphens only"}
-          </p>
+        {errors.name && (
+          <p className="text-lg font-semibold text-required">{errors.name}</p>
         )}
       </div>
 
@@ -175,7 +180,7 @@ const Form = () => {
           value={age}
           onChange={(e) => {
             setAge(e.target.value);
-            if (submitted.startsWith("age")) setSubmitted("");
+            clearError("age");
           }}
           placeholder="Please Enter Your Age"
           min="1"
@@ -185,12 +190,8 @@ const Form = () => {
           autoComplete="off"
         />
 
-        {submitted.startsWith("age") && (
-          <p className="text-lg font-semibold text-required">
-            {submitted === "age"
-              ? "Age is required"
-              : "Age must be a whole number between 10 and 60"}
-          </p>
+        {errors.age && (
+          <p className="text-lg font-semibold text-required">{errors.age}</p>
         )}
       </div>
 
@@ -209,7 +210,7 @@ const Form = () => {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);
-            if (submitted.startsWith("email")) setSubmitted("");
+            clearError("email");
           }}
           placeholder="Please Enter Your Email Address"
           className="text-lg placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2"
@@ -217,12 +218,8 @@ const Form = () => {
           autoComplete="email"
         />
 
-        {submitted.startsWith("email") && (
-          <p className="text-lg font-semibold text-required">
-            {submitted === "email"
-              ? "Email is required"
-              : "Please enter a valid email address"}
-          </p>
+        {errors.email && (
+          <p className="text-lg font-semibold text-required">{errors.email}</p>
         )}
       </div>
 
@@ -242,7 +239,7 @@ const Form = () => {
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              if (submitted.startsWith("password")) setSubmitted("");
+              clearError("password");
             }}
             placeholder="Please Enter Your Password"
             className="text-lg w-full placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2 pr-20"
@@ -259,11 +256,9 @@ const Form = () => {
           </button>
         </div>
 
-        {submitted.startsWith("password") && (
+        {errors.password && (
           <p className="text-lg font-semibold text-required">
-            {submitted === "password"
-              ? "Password is required"
-              : "Password must contain 8 characters, uppercase, lowercase, a number, and a special character"}
+            {errors.password}
           </p>
         )}
       </div>
@@ -283,7 +278,7 @@ const Form = () => {
           value={number}
           onChange={(e) => {
             setNumber(e.target.value);
-            if (submitted.startsWith("number")) setSubmitted("");
+            clearError("number");
           }}
           placeholder="Enter your 10-digit mobile number"
           className="text-lg placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2"
@@ -293,11 +288,9 @@ const Form = () => {
           autoComplete="tel"
         />
 
-        {submitted.startsWith("number") && (
+        {errors.number && (
           <p className="text-lg font-semibold text-required">
-            {submitted === "number"
-              ? "Mobile number is required"
-              : "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9"}
+            {errors.number}
           </p>
         )}
       </div>
@@ -317,7 +310,7 @@ const Form = () => {
           value={dob}
           onChange={(e) => {
             setDob(e.target.value);
-            if (submitted.startsWith("dob")) setSubmitted("");
+            clearError("dob");
           }}
           max={new Date().toLocaleDateString("en-CA")}
           className="text-lg placeholder:font-medium placeholder:text-lg outline-borders border border-solid border-black/30 placeholder:text-input-text rounded-2xl p-2"
@@ -325,12 +318,8 @@ const Form = () => {
           autoComplete="bday"
         />
 
-        {submitted.startsWith("dob") && (
-          <p className="text-lg font-semibold text-required">
-            {submitted === "dob"
-              ? "Date of birth is required"
-              : "Please select a valid date that is not in the future"}
-          </p>
+        {errors.dob && (
+          <p className="text-lg font-semibold text-required">{errors.dob}</p>
         )}
       </div>
 
